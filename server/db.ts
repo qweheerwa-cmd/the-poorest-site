@@ -1,4 +1,4 @@
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { InsertUser, users, posts, InsertPost, comments, InsertComment, likes, InsertLike, favorites, InsertFavorite, expenses, InsertExpense } from "../drizzle/schema";
@@ -122,7 +122,7 @@ export async function getPostById(id: number) {
   const result = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
   if (result.length > 0) {
     // 增加浏览量
-    await db.update(posts).set({ views: (posts.views as any) + 1 }).where(eq(posts.id, id));
+    await db.update(posts).set({ views: sql`views + 1` }).where(eq(posts.id, id));
     return { ...result[0], views: (result[0].views || 0) + 1 };
   }
   return undefined;
@@ -281,12 +281,12 @@ export async function toggleLike(userId: number, postId: number) {
       .delete(likes)
       .where(and(eq(likes.userId, userId), eq(likes.targetId, postId), eq(likes.targetType, 'post')));
     // 减少帖子点赞数
-    await db.update(posts).set({ likes: (posts.likes as any) - 1 }).where(eq(posts.id, postId));
+    await db.update(posts).set({ likes: sql`likes - 1` }).where(eq(posts.id, postId));
     return false;
   } else {
     await db.insert(likes).values({ userId, targetId: postId, targetType: 'post', createdAt: new Date() });
     // 增加帖子点赞数
-    await db.update(posts).set({ likes: (posts.likes as any) + 1 }).where(eq(posts.id, postId));
+    await db.update(posts).set({ likes: sql`likes + 1` }).where(eq(posts.id, postId));
     return true;
   }
 }
