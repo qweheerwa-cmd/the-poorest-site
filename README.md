@@ -55,7 +55,7 @@ React 19 + TypeScript + Vite + Express + tRPC + MySQL + Tailwind CSS
 
 ## 在线地址
 
-[http://8.137.198.77:8080/](http://8.137.198.77:8080/)（ICP备案审核中）
+[https://shipinzs.xyz](https://shipinzs.xyz)
 
 ## 怎么帮我？
 
