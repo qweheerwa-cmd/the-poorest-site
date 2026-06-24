@@ -8,18 +8,17 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db && (process.env.DB_HOST || process.env.DATABASE_URL)) {
     try {
-      const _dbUrl = new URL(process.env.DATABASE_URL);
-  const pool = mysql.createPool({
-    host: _dbUrl.hostname,
-    port: parseInt(_dbUrl.port || '3306'),
-    user: decodeURIComponent(_dbUrl.username),
-    password: decodeURIComponent(_dbUrl.password),
-    database: _dbUrl.pathname.replace(/^\//, ''),
-    waitForConnections: true,
-    connectionLimit: 10
-  });
+      const pool = mysql.createPool({
+        host: process.env.DB_HOST || "localhost",
+        port: parseInt(process.env.DB_PORT || "3306"),
+        user: process.env.DB_USER || "shipinzs",
+        password: process.env.DB_PASSWORD || "",
+        database: process.env.DB_NAME || "shipinzs",
+        waitForConnections: true,
+        connectionLimit: 10
+      });
       _db = drizzle(pool);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
