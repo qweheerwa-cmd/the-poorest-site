@@ -32,50 +32,16 @@ export default function Community() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // 示例数据
-  const mockPosts = [
-    {
-      id: 1,
-      title: "我的创业失败经历：从梦想到破产",
-      category: "失败博物馆",
-      author: "穷人甲",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=1",
-      excerpt: "投入了全部积蓄，结果半年内就亏完了。现在负债累累，但我不后悔...",
-      likes: 234,
-      comments: 45,
-      views: 1200,
-      createdAt: "2 小时前",
-    },
-    {
-      id: 2,
-      title: "月入2000的我如何通过副业增收到5000",
-      category: "搞钱路子",
-      author: "穷人乙",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2",
-      excerpt: "分享我的三个副业渠道，每个都可以在业余时间完成，零成本启动...",
-      likes: 567,
-      comments: 89,
-      views: 3400,
-      createdAt: "4 小时前",
-    },
-    {
-      id: 3,
-      title: "今天只花了5块钱吃了一整天",
-      category: "穷人日常",
-      author: "穷人丙",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=3",
-      excerpt: "一碗面条2块，一个馒头1块，一瓶矿泉水2块。简直是艺术...",
-      likes: 892,
-      comments: 156,
-      views: 5600,
-      createdAt: "6 小时前",
-    },
-  ];
+  // 获取帖子列表
+  const { data: posts = [], isLoading } = trpc.community.getPosts.useQuery({
+    category: selectedCategory,
+    search: searchQuery || undefined,
+    limit: 20,
+  });
 
-  const filteredPosts = mockPosts.filter(
-    (post) =>
-      post.category === selectedCategory &&
-      (post.title.includes(searchQuery) || post.excerpt.includes(searchQuery))
+  const filteredPosts = posts.filter(
+    (post: any) =>
+      (!searchQuery || post.title.includes(searchQuery) || post.content.includes(searchQuery))
   );
 
   return (
@@ -158,8 +124,12 @@ export default function Community() {
 
         {/* 帖子列表 */}
         <div className="space-y-6">
-          {filteredPosts.length > 0 ? (
-            filteredPosts.map((post) => (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">加载中...</p>
+            </div>
+          ) : filteredPosts.length > 0 ? (
+            filteredPosts.map((post: any) => (
               <Card
                 key={post.id}
                 className="p-6 bg-card/50 border-border/50 hover:border-primary/50 hover:bg-card/70 transition-all duration-300 cursor-pointer group"
@@ -169,8 +139,8 @@ export default function Community() {
                   {/* 作者头像 */}
                   <div className="flex-shrink-0">
                     <img
-                      src={post.avatar}
-                      alt={post.author}
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.userId}`}
+                      alt="用户头像"
                       className="w-12 h-12 rounded-full"
                     />
                   </div>
@@ -180,8 +150,10 @@ export default function Community() {
                     {/* 作者和时间 */}
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <span className="font-bold text-primary">{post.author}</span>
-                        <span className="text-gray-400 text-sm ml-2">{post.createdAt}</span>
+                        <span className="font-bold text-primary">穷人{post.userId}</span>
+                        <span className="text-gray-400 text-sm ml-2">
+                          {new Date(post.createdAt).toLocaleDateString("zh-CN")}
+                        </span>
                       </div>
                       <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">
                         {post.category}
@@ -195,22 +167,22 @@ export default function Community() {
 
                     {/* 摘要 */}
                     <p className="text-gray-300 text-sm mb-4 line-clamp-2">
-                      {post.excerpt}
+                      {post.content.substring(0, 100)}...
                     </p>
 
                     {/* 交互数据 */}
                     <div className="flex items-center gap-6 text-gray-400 text-sm">
                       <div className="flex items-center gap-2 hover:text-primary transition">
                         <Heart className="w-4 h-4" />
-                        <span>{post.likes}</span>
+                        <span>{post.likes || 0}</span>
                       </div>
                       <div className="flex items-center gap-2 hover:text-primary transition">
                         <MessageCircle className="w-4 h-4" />
-                        <span>{post.comments}</span>
+                        <span>{post.commentCount || 0}</span>
                       </div>
                       <div className="flex items-center gap-2 hover:text-primary transition">
                         <Eye className="w-4 h-4" />
-                        <span>{post.views}</span>
+                        <span>{post.views || 0}</span>
                       </div>
                     </div>
                   </div>

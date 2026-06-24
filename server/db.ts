@@ -110,7 +110,12 @@ export async function getPostById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  if (result.length > 0) {
+    // 增加浏览量
+    await db.update(posts).set({ views: (posts.views as any) + 1 }).where(eq(posts.id, id));
+    return { ...result[0], views: (result[0].views || 0) + 1 };
+  }
+  return undefined;
 }
 
 export async function getPostsByCategory(category: string, limit: number = 20, offset: number = 0) {
@@ -258,16 +263,20 @@ export async function toggleLike(userId: number, postId: number) {
   const existing = await db
     .select()
     .from(likes)
-    .where(and(eq(likes.userId, userId), eq(likes.postId, postId)))
+    .where(and(eq(likes.userId, userId), eq(likes.targetId, postId), eq(likes.targetType, 'post')))
     .limit(1);
 
   if (existing.length > 0) {
     await db
       .delete(likes)
-      .where(and(eq(likes.userId, userId), eq(likes.postId, postId)));
+      .where(and(eq(likes.userId, userId), eq(likes.targetId, postId), eq(likes.targetType, 'post')));
+    // 减少帖子点赞数
+    await db.update(posts).set({ likes: (posts.likes as any) - 1 }).where(eq(posts.id, postId));
     return false;
   } else {
-    await db.insert(likes).values({ userId, postId, createdAt: new Date() });
+    await db.insert(likes).values({ userId, targetId: postId, targetType: 'post', createdAt: new Date() });
+    // 增加帖子点赞数
+    await db.update(posts).set({ likes: (posts.likes as any) + 1 }).where(eq(posts.id, postId));
     return true;
   }
 }

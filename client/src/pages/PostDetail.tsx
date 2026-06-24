@@ -43,13 +43,16 @@ export default function PostDetail() {
     onError: () => { setIsFavorited(!isFavorited); },
   });
 
+  // 获取帖子详情的 queryClient
+  const utils = trpc.useUtils();
+
   // 评论 mutation
   const commentMutation = trpc.community.createComment.useMutation({
     onSuccess: () => {
       setCommentText("");
       toast.success("评论成功");
       // 刷新评论列表
-      window.location.reload();
+      utils.community.getComments.invalidate({ postId });
     },
     onError: () => {
       toast.error("评论失败，请重试");
@@ -172,12 +175,15 @@ export default function PostDetail() {
               variant={isLiked ? "default" : "outline"}
               className={isLiked ? "bg-primary text-black" : ""}
               onClick={handleLike}
-              disabled={likeMutation.isPending}
+              disabled={toggleLikeMutation.isPending}
             >
               <Heart className="w-4 h-4 mr-2" />
               {post.likes || 0} 点赞
             </Button>
-            <Button variant="outline" onClick={() => {}}>
+            <Button variant="outline" onClick={() => {
+              const commentSection = document.querySelector('.comment-section');
+              commentSection?.scrollIntoView({ behavior: 'smooth' });
+            }}>
               <MessageCircle className="w-4 h-4 mr-2" />
               {comments.length} 评论
             </Button>
@@ -185,7 +191,7 @@ export default function PostDetail() {
               variant={isFavorited ? "default" : "outline"}
               className={isFavorited ? "bg-primary text-black" : ""}
               onClick={handleFavorite}
-              disabled={favoriteMutation.isPending}
+              disabled={toggleFavoriteMutation.isPending}
             >
               <Bookmark className="w-4 h-4 mr-2" />
               收藏
@@ -198,7 +204,7 @@ export default function PostDetail() {
         </Card>
 
         {/* 评论区 */}
-        <Card className="p-8 border-border">
+        <Card className="p-8 border-border comment-section">
           <h2 className="text-2xl font-bold text-primary mb-6">评论</h2>
 
           {/* 评论输入框 */}
